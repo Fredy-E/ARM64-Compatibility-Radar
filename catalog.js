@@ -1,0 +1,5 @@
+(function(root){
+function validate(items){if(!Array.isArray(items)||items.length>5000)throw Error('Expected an array of at most 5000 records.');const seen=new Set();for(const r of items){if(!r||typeof r.id!=='string'||seen.has(r.id)||typeof r.name!=='string'||!['tested','reported','unknown'].includes(r.status)||typeof r.source!=='string'||typeof r.date!=='string'||typeof r.sample!=='boolean')throw Error('Each record needs a unique id, name, valid status, source, date, and sample boolean.');if(r.status!=='unknown'&&(!r.source||!/^\d{4}-\d{2}-\d{2}$/.test(r.date)))throw Error('Tested or reported records require a source and date.');if(r.source&&!/^https:\/\//.test(r.source))throw Error('Evidence links must use HTTPS.');seen.add(r.id);}return items;}
+function filter(items,q,status,type){q=q.toLowerCase();return items.filter(r=>(!q||[r.name,r.type,r.architecture,r.notes,r.version].join(' ').toLowerCase().includes(q))&&(status==='all'||r.status===status)&&(type==='all'||r.type===type));}
+const api={validate,filter};if(typeof module!=='undefined')module.exports=api;else root.RadarCatalog=api;
+})(typeof window!=='undefined'?window:globalThis);
