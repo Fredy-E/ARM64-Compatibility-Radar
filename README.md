@@ -1,8 +1,5 @@
-<h1 align="center">ARM64 Compatibility Radar</h1>
-
 <p align="center">
-  <strong>Make Windows-on-ARM compatibility claims traceable.</strong><br>
-  A local, evidence-first catalog where every entry is <code>tested</code>, <code>reported</code>, or <code>unknown</code> — with dated, HTTPS sources.
+  <img src="assets/banner.png" alt="ARM64 Compatibility Radar - make Windows-on-ARM compatibility claims traceable" width="100%">
 </p>
 
 <p align="center">
