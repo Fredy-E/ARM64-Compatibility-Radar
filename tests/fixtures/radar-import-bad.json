@@ -1,0 +1,14 @@
+[
+  {
+    "id": "fixture-arm64-bad",
+    "name": "Synthetic invalid tested record",
+    "type": "app",
+    "architecture": "ARM64",
+    "version": "0",
+    "status": "tested",
+    "source": "",
+    "date": "",
+    "notes": "Synthetic fixture: tested status without any evidence. Must be rejected.",
+    "sample": false
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "fixture-arm64-app",
+    "name": "Synthetic fixture app",
+    "type": "app",
+    "architecture": "ARM64",
+    "version": "Fixture 1.0",
+    "status": "unknown",
+    "source": "",
+    "date": "",
+    "notes": "Synthetic test fixture. Not real compatibility evidence.",
+    "sample": false
+  },
+  {
+    "id": "fixture-arm64-device",
+    "name": "Synthetic fixture device",
+    "type": "device",
+    "architecture": "Driver unknown",
+    "version": "Fixture 2.0",
+    "status": "unknown",
+    "source": "",
+    "date": "",
+    "notes": "Synthetic test fixture. Not real compatibility evidence.",
+    "sample": false
+  },
+  {
+    "id": "fixture-arm64-tested",
+    "name": "Synthetic fixture tested record",
+    "type": "app",
+    "architecture": "x64 emulated",
+    "version": "Fixture 3.0",
+    "status": "tested",
+    "source": "https://example.invalid/synthetic-evidence",
+    "date": "2026-01-15",
+    "notes": "Synthetic test fixture with a placeholder HTTPS source. Not a real result.",
+    "sample": false
+  }
+]

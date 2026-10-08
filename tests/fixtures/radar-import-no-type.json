@@ -1,0 +1,13 @@
+[
+  {
+    "id": "fixture-arm64-no-type",
+    "name": "Synthetic record without a type field",
+    "architecture": "ARM64",
+    "version": "0",
+    "status": "unknown",
+    "source": "",
+    "date": "",
+    "notes": "Synthetic fixture for missing-field search behavior.",
+    "sample": false
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "fixture-arm64-html",
+    "name": "<img src=x onerror=window.__xss=1>",
+    "type": "app",
+    "architecture": "<script>window.__xss=2</script>",
+    "version": "0",
+    "status": "unknown",
+    "source": "",
+    "date": "",
+    "notes": "Synthetic escaping fixture. Must render as text, never as HTML.",
+    "sample": false
+  }
+]

@@ -1,0 +1,55 @@
+name: pages
+
+# Manual-only preparation of a static artifact for GitHub Pages.
+#
+# This workflow does NOT enable GitHub Pages and does not publish on push.
+# Enabling Pages (Settings -> Pages -> Source: GitHub Actions) and dispatching
+# this workflow are owner actions. The deploy job only runs on workflow_dispatch.
+#
+# Least privilege: the build job gets read-only contents access; only the deploy
+# job adds pages:write + id-token:write, as required by actions/deploy-pages.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage static files (explicit allowlist)
+        # Only the runtime files are staged: tests, node_modules, dev tooling,
+        # and any private data are excluded by construction. This repo contains
+        # no private data.
+        run: |
+          mkdir -p _site
+          cp index.html style.css catalog.js _site/
+      - name: Reject external CDN references in the deployed files
+        run: |
+          if grep -RInE 'https?://' _site; then
+            echo "External URL found in deployed files; this demo must stay dependency-free." >&2
+            exit 1
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
