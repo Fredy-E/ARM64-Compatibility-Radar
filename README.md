@@ -1,3 +1,8 @@
+<!-- prototype-status:start -->
+> **Experimental concept prototype — idea exploration only.**
+> A work-in-progress demo, not a finished or production-ready product. Existing features and tests demonstrate the concept; they do not establish real-world reliability or complete functionality. Features may change or remain unfinished.
+<!-- prototype-status:end -->
+
 <p align="center">
   <img src="assets/banner.png" alt="ARM64 Compatibility Radar - make Windows-on-ARM compatibility claims traceable" width="100%">
 </p>
