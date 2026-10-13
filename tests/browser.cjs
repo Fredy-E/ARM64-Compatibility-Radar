@@ -289,6 +289,164 @@ test('search ignores missing fields instead of matching the literal "undefined"'
   assert.match(await page.locator('#rows').textContent(), /No matching records/);
 });
 
+test('preview shell: revision tag, honest notice, tokens, no body overflow', async (context) => {
+  const page = await context.newPage();
+  await page.goto(FILE_URL);
+  assert.equal(await page.getAttribute('[data-ui-revision]', 'data-ui-revision'), 'portfolio-preview-1');
+  const notice = page.locator('#prototype-notice');
+  assert.ok(await notice.isVisible(), 'prototype notice visible');
+  const text = await notice.textContent();
+  assert.ok(text.includes('Experimental concept prototype — idea exploration only.'), 'exact experimental sentence');
+  assert.match(text, /not a finished|not finished/i);
+  assert.match(text, /production-ready/i);
+  const box = await notice.boundingBox();
+  assert.ok(box.y >= 0 && box.y + box.height <= 900, 'notice within first 900px desktop');
+  const tokens = await page.evaluate(() => {
+    const style = getComputedStyle(document.documentElement);
+    return ['--ui-bg', '--ui-surface', '--ui-ink', '--ui-muted', '--ui-accent', '--ui-border', '--ui-radius'].map((k) => style.getPropertyValue(k).trim());
+  });
+  assert.ok(tokens.every(Boolean), 'family tokens resolve');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(overflow <= 1, `no desktop body overflow (got ${overflow})`);
+  assert.match(await page.locator('#count').textContent(), /^2 of 2 records · 2 fictional samples$/);
+});
+
+test('preview shell: narrow viewport keeps controls reachable without body overflow', async (context) => {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(FILE_URL);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(overflow <= 1, `no 390px body overflow (got ${overflow})`);
+  assert.ok(await page.locator('#q').isVisible() && await page.locator('#export').isVisible(), 'key actions reachable');
+  await page.fill('#q', 'usb');
+  assert.equal(await page.locator('#rows tr').count(), 1);
+});
+
+test('round2: populated 300/320/390/desktop containment with long boundary-legal fields', async (context) => {
+  const page = await context.newPage();
+  for (const width of [300, 320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(FILE_URL);
+    await page.fill('#name', 'A'.repeat(200));
+    await page.fill('#arch', 'B'.repeat(200));
+    await page.fill('#notes', 'C'.repeat(500));
+    await page.fill('#version', 'V'.repeat(100));
+    await page.selectOption('#entry-status', 'tested');
+    await page.fill('#source', 'https://example.invalid/' + 'x'.repeat(80));
+    await page.fill('#date', '2026-01-15');
+    await page.click('#add button');
+    assert.match(await page.locator('#message').textContent(), /Record added locally/);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    assert.ok(overflow <= 1, `no body overflow at ${width}px (got ${overflow})`);
+    const wrap = await page.evaluate(() => {
+      const el = document.querySelector('.table-wrap');
+      return { sw: el.scrollWidth, cw: el.clientWidth };
+    });
+    if (width <= 390) assert.ok(wrap.sw >= wrap.cw - 1, `table region contains wide table at ${width}px`);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.badge')).whiteSpace), 'nowrap');
+    assert.ok(await page.locator('#q').isVisible(), `search reachable at ${width}px`);
+    assert.ok(await page.locator('#export').isVisible(), `export reachable at ${width}px`);
+    assert.ok(await page.locator('#add button').isVisible(), `add reachable at ${width}px`);
+    await page.fill('#q', 'AAAAA');
+    assert.ok((await page.locator('#rows tr').count()) >= 1, `filter works with long token at ${width}px`);
+    await page.fill('#q', '');
+  }
+});
+
+test('round2: light and dark schemes meet AA for body/muted/accent/badge/small/placeholder', async (context) => {
+  const page = await context.newPage();
+  for (const scheme of ['dark', 'light']) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto(FILE_URL);
+    // Add one tested record so the HTTPS evidence link exists for accent measurement.
+    await page.fill('#name', 'Contrast probe app');
+    await page.fill('#source', 'https://example.invalid/evidence');
+    await page.fill('#date', '2026-01-15');
+    await page.selectOption('#entry-status', 'tested');
+    await page.click('#add button');
+    const ratios = await page.evaluate(() => {
+      const lum = (rgb) => {
+        const v = rgb.slice(0, 3).map((n) => n / 255).map((n) => (n <= 0.04045 ? n / 12.92 : Math.pow((n + 0.055) / 1.055, 2.4)));
+        return v[0] * 0.2126 + v[1] * 0.7152 + v[2] * 0.0722;
+      };
+      const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05);
+      const pair = (sel, pseudo) => {
+        const el = document.querySelector(sel);
+        if (!el) return null;
+        const parse = (v) => (v.match(/[\d.]+/g) || []).map(Number);
+        const fg = parse(pseudo ? getComputedStyle(el, pseudo).color : getComputedStyle(el).color).slice(0, 3);
+        let n = el, bg = null;
+        while (n) {
+          const c = parse(getComputedStyle(n).backgroundColor);
+          if (c.length >= 3 && (c.length === 3 || c[3] === 1)) { bg = c.slice(0, 3); break; }
+          n = n.parentElement;
+        }
+        if (!bg) bg = [255, 255, 255];
+        return Number(contrast(fg, bg).toFixed(3));
+      };
+      return {
+        body: pair('body'),
+        muted_subtitle: pair('.subtitle'),
+        muted_hint: pair('.hint'),
+        small: pair('#rows small'),
+        accent_evidence: pair('#rows a'),
+        accent_eyebrow: pair('.eyebrow'),
+        badge: pair('.badge'),
+        placeholder: pair('#q', '::placeholder'),
+      };
+    });
+    for (const [label, ratio] of Object.entries(ratios)) {
+      assert.ok(ratio !== null && ratio >= 4.5, `${scheme} AA ${label} >= 4.5 (got ${ratio})`);
+    }
+  }
+  await page.emulateMedia({ colorScheme: 'dark' });
+});
+
+test('round2: keyboard focus, reduced-motion and print stay usable', async (context) => {
+  const page = await context.newPage();
+  await page.goto(FILE_URL);
+  await page.keyboard.press('Tab');
+  const focused = await page.evaluate(() => ({ cls: document.activeElement.className, text: document.activeElement.textContent.slice(0, 40) }));
+  assert.ok(String(focused.cls).includes('skip'), `Tab lands on skip link (got ${JSON.stringify(focused)})`);
+  const outline = await page.evaluate(() => {
+    const s = getComputedStyle(document.activeElement);
+    return { w: s.outlineWidth, c: s.outlineColor, style: s.outlineStyle };
+  });
+  assert.equal(outline.w, '3px');
+  assert.match(outline.c, /211,\s*172,\s*99/);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(FILE_URL);
+  assert.equal(await page.locator('#rows tr').count(), 2);
+  await page.emulateMedia({ media: 'print' });
+  const printInfo = await page.evaluate(() => ({
+    skipHidden: getComputedStyle(document.querySelector('.skip')).display === 'none',
+    tableMin: getComputedStyle(document.querySelector('table')).minWidth,
+    overflow: document.documentElement.scrollWidth - window.innerWidth,
+  }));
+  assert.ok(printInfo.skipHidden, 'print hides skip link');
+  assert.equal(printInfo.tableMin, '0px');
+  assert.ok(printInfo.overflow <= 1, `no print overflow (got ${printInfo.overflow})`);
+  await page.emulateMedia({ media: 'screen' });
+});
+
+test('round2: narrow-width filter/import/export actions stay reachable', async (context) => {
+  const page = await context.newPage();
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto(FILE_URL);
+  await page.fill('#q', 'usb');
+  assert.equal(await page.locator('#rows tr').count(), 1);
+  await page.fill('#q', '');
+  await page.setInputFiles('#import', path.join(FIXTURES, 'radar-import.json'));
+  await waitForMessage(page, /Imported local catalog\. No data was uploaded\./);
+  assert.equal(await page.locator('#rows tr').count(), 3);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#export')]);
+  assert.equal(download.suggestedFilename(), 'arm64-catalog.json');
+  const body = JSON.parse((await readDownload(download)).toString('utf8'));
+  assert.equal(body.length, 3);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  assert.ok(overflow <= 1, `no 320px overflow after import/export (got ${overflow})`);
+});
+
 async function runTests() {
   fs.mkdirSync(ARTIFACTS, { recursive: true });
   const browser = await launchBrowser();

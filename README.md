@@ -118,3 +118,14 @@ Independently sourced records, stronger environment/version schemas, and a revie
 ## See also
 
 [DriverLens](https://github.com/Fredy-E/DriverLens) · [MeshLab Mini](https://github.com/Fredy-E/MeshLab-Mini) · [Diagnostic Scan Diff](https://github.com/Fredy-E/Diagnostic-Scan-Diff) · [Offline Museum Kit](https://github.com/Fredy-E/Offline-Museum-Kit) — small local-first tools built for Windows-on-ARM work.
+
+## Verify (default)
+
+Full default verification (unit + static UI shell + real-browser end-to-end):
+
+```sh
+npm run verify
+# = node tests/catalog.test.cjs && node tests/ui-shell.test.cjs && node tests/browser.cjs
+```
+
+`npm test` runs the unit subset only. Browser checks need Playwright 1.63.0 (dev-only) plus Chrome/Chromium; `npm ci` installs dev dependencies with browser download skipped where configured.

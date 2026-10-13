@@ -6,7 +6,7 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -18,9 +18,7 @@ jobs:
         run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-      - name: Unit checks
-        run: npm test
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-      - name: Browser checks (bundled Chromium)
-        run: npm run test:browser
+      - name: Full default verification
+        run: npm run verify

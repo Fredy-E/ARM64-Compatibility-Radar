@@ -5,9 +5,12 @@
   "scripts": {
     "test": "node tests/catalog.test.cjs",
     "test:browser": "node tests/browser.cjs",
-    "screenshot": "node scripts/screenshot.cjs"
+    "screenshot": "node scripts/screenshot.cjs",
+    "verify": "node tests/catalog.test.cjs && node tests/ui-shell.test.cjs && node tests/browser.cjs",
+    "test:ui": "node tests/ui-shell.test.cjs"
   },
   "devDependencies": {
     "playwright": "1.63.0"
-  }
+  },
+  "version": "0.2.0-preview.1"
 }
